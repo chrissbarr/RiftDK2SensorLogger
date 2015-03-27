@@ -70,6 +70,7 @@ public class RiftDK2Logger {
 	 private static class SensorFetcher implements Runnable {
 		 
 	        private final Hmd hmd;
+	        private long startTime = System.currentTimeMillis();
 	 
 	        public SensorFetcher(Hmd hmd) {
 	            this.hmd = hmd;
@@ -110,7 +111,8 @@ public class RiftDK2Logger {
 	                System.out.println(latestData.toString());
 	                if(printWriter != null)
 	                {
-	                	printWriter.println(latestData.toString());
+	                	long timeSinceStart = System.currentTimeMillis() - startTime;
+	                	printWriter.println(timeSinceStart + "\t" + latestData.toString());
 	                }
 	                try {
 	                    Thread.sleep(1);
