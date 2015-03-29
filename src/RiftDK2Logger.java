@@ -28,7 +28,7 @@ public class RiftDK2Logger {
         Hmd.initialize();
  
         try {
-            Thread.sleep(500);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
@@ -39,21 +39,19 @@ public class RiftDK2Logger {
             throw new IllegalStateException("Unable to initialize HMD");
         }
  
-        hmd.configureTracking(ovrTrackingCap_Orientation
-                | ovrTrackingCap_MagYawCorrection
-                | ovrTrackingCap_Position, 0);
+        hmd.configureTracking(ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
  
         Thread t1 = new Thread(new SensorFetcher(hmd));
         t1.start();
  
-        
- 
         System.out.println("Press 'q' to quit..");
         System.out.println("");
-        Scanner sc = new Scanner(System.in);
+        
+        Scanner inputScanner = new Scanner(System.in);
         while (run) {
-            if (sc.nextLine().trim().equals("q")) {
+            if (inputScanner.nextLine().trim().equals("q")) {
                 run = false;
+                inputScanner.close();
             }
         }
         
@@ -81,7 +79,7 @@ public class RiftDK2Logger {
 	        @Override
 	        public void run() {
 	        	
-	        	String outputFileName = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date()) + ".txt"; 
+	        	String outputFileName = "data/" + new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date()) + ".txt"; 
 	        	
 	        	PrintWriter printWriter = null;
 	        	
@@ -96,14 +94,12 @@ public class RiftDK2Logger {
 	        	
 	            while (run) {
 	                TrackingState sensorState = hmd.getSensorState(Hmd.getTimeInSeconds());
-	                
-	               
 	 
 	                OvrVector3f pos = sensorState.HeadPose.Pose.Position;
 	                OvrQuaternionf quat = sensorState.HeadPose.Pose.Orientation;
-	                OvrVector3f accel = sensorState.HeadPose.AngularAcceleration;
-	                OvrVector3f veloc = sensorState.HeadPose.AngularVelocity;
-	                
+	                OvrVector3f veloc = sensorState.HeadPose.AngularVelocity;	//rads / s
+	                OvrVector3f accel = sensorState.HeadPose.AngularAcceleration;	// rads / s / s
+	               
 	                double px = pos.x;
 	                double py = pos.y;
 	                double pz = pos.z;
@@ -128,6 +124,9 @@ public class RiftDK2Logger {
 	                {
 	                	long timeSinceStart = System.currentTimeMillis() - startTime;
 	                	printWriter.println(timeSinceStart + "\t" + latestData.toString());
+	                }
+	                else {
+	                	System.out.println("Warning: Not logging any data!");
 	                }
 	                
 	                try {
@@ -154,7 +153,9 @@ public class RiftDK2Logger {
 		 
         private final long id;
         private final double px, py, pz, qx, qy, qz, qw, ax, ay, az, vx, vy, vz;
-        private double pitch, roll, yaw;
+        private double axd, ayd, azd, vxd, vyd, vzd;	//degrees
+        
+        private boolean outputInDegrees = true;	//by default all angles are radians. Change to convert and output degrees.
  
         public SensorData(long id, double px, double py, double pz, double qx, double qy, double qz, double qw, double ax, double ay, double az, double vx, double vy, double vz) {
             this.id = id;
@@ -174,7 +175,15 @@ public class RiftDK2Logger {
             this.vy = vy;
             this.vz = vz;
             
-            
+            if(outputInDegrees == true) {
+            	axd = Math.toDegrees(ax);
+                ayd = Math.toDegrees(ay);
+                azd = Math.toDegrees(az);
+                
+                vxd = Math.toDegrees(vx);
+                vyd = Math.toDegrees(vy);
+                vzd = Math.toDegrees(vz);
+            }
             
         }
  
@@ -188,8 +197,10 @@ public class RiftDK2Logger {
  
         @Override
         public String toString() {
-            return String.format("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f", px, py, pz, qx, qy, qz, qw,ax,ay,az,vx,vy,vz);
-        	//return String.format("Position: %.3f  %.3f  %.3f | Quat:  %.3f  %.3f  %.3f  %.3f", px, py, pz, qx, qy, qz, qw);
+        	if(outputInDegrees) {
+        		return String.format("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f", px, py, pz, qx, qy, qz, qw, axd, ayd, azd, vxd, vyd, vzd); }
+        	else {
+        		return String.format("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f", px, py, pz, qx, qy, qz, qw, ax, ay, az, vx, vy, vz); }
         }
     }
 
