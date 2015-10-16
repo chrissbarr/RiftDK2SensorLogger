@@ -23,9 +23,23 @@ public class RiftDK2Logger {
 	private static boolean run = true;
 	private static final long TIME_BETWEEN_SAMPLES = 25;
 	
+	static final int PORT = 5005;
+	
 	public static void main(String[] args) throws UnknownHostException {
 		 
+		RemoteComms.initComms(PORT);
+		RemoteComms.transmit("Hello?\n");
+		
+		try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+		
+		RemoteComms.closeComms();
+		
         Hmd.initialize();
+        
  
         try {
             Thread.sleep(1000);
